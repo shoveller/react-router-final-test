@@ -41,6 +41,16 @@ const schema = zfd.formData({
     }),
   ),
   agree: zfd.repeatable(z.string().array().min(2, "모두 선택하세요")),
+  files: zfd
+    .repeatable(
+      z
+        .instanceof(Object)
+        .transform((files) => {
+          return (files as File[]).filter((file) => file.name !== "");
+        })
+        .refine((files) => files.length > 0, "파일을 선택해주세요"),
+    )
+    .optional(),
 });
 
 type SchemaType = z.infer<typeof schema>;
@@ -104,7 +114,7 @@ const Detail = () => {
       {navigation.state === "submitting" && <h1>폼을 보내는 중</h1>}
       {navigation.state === "loading" && <h1>초기값을 불러오는 중</h1>}
       {revalidator.state === "loading" && <h1>초기값을 다시 불러오는 중</h1>}
-      <Form method="POST" key={key}>
+      <Form method="POST" encType="multipart/form-data" key={key}>
         <fieldset>
           <legend>이름</legend>
           <input type="text" name="user" defaultValue={initialData.user} />
@@ -161,6 +171,11 @@ const Detail = () => {
             defaultChecked={initialData?.agree.includes("2")}
           />
           {actionData?.errors?.agree && actionData.errors.agree[0]}
+        </fieldset>
+        <fieldset>
+          <legend>첨부파일</legend>
+          <input type="file" name="files" multiple />
+          {actionData?.errors?.files && actionData?.errors?.files[0]}
         </fieldset>
         <button type="submit">서브밋</button>
         <button type="button" onClick={reset}>
